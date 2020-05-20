@@ -1,0 +1,148 @@
+body {
+    font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, Sans-Serif;
+    padding: 0px;
+    margin: 1em;
+    margin-left: 20vw;
+    margin-right: 20vw;
+    color: #110122;
+    background-color: #fcfcfc;
+}
+header {
+    display: flex;
+    align-items: center;
+}
+header img {
+    height: 5em;
+    width: 5em;
+    background-color: #fff;
+    border-radius: 100%;
+    margin-right: 1em;
+}
+header h1 {
+    margin: 0px;
+}
+
+#stati {
+    margin: 1em;
+    display: flex;
+    flex-direction: column;
+}
+
+.status .head {
+    display: flex;
+    align-items: center;
+}
+
+.status span.up {
+    color: #5eed1c;
+}
+
+.status span.down {
+    color: #ed1c24;
+}
+
+.disabled span.down,
+.disabled span.up {
+    color: #4f4e55;
+}
+
+#stati h3 {
+    font-weight: normal;
+}
+
+.status ul {
+    list-style-type: none;
+    display: flex;
+    padding: 0;
+    margin: 0;
+}
+
+.status li {
+    display: inline-block;
+    height: 1em;
+    flex-grow: 1;
+    margin: 2px;
+    position: relative;
+}
+
+.status li::before {
+    background: #403f41;
+    width: 1em;
+    height: 1em;
+    transform: rotate(45deg);
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 100%;
+    right: 0;
+    margin: auto;
+    transition: 0.1s opacity, 0s display 0.1s;
+    z-index: 10;
+    box-shadow: #403f4150 0px 3px 4px 4px;
+    opacity: 0;
+    display: none;
+}
+
+.status li:hover::before {
+    opacity: 1;
+    display: block;
+}
+
+.status li::after {
+    position:  absolute;
+    left: 10%;
+    top: 150%;
+    right: 10%;
+    color: #fcfcfc;
+    padding: 0.25em;
+    background: #403f41;
+    content: attr(point);
+    text-align: center;
+    opacity: 0;
+    transition: 0.1s opacity, 0s display 0.1s;
+    z-index: 10;
+    display: none;
+    box-shadow: #403f4150 0px 3px 4px 4px;
+}
+
+.status li:hover::after {
+    display: block;
+    opacity: 1;
+}
+
+#announce {
+    line-height: 1.5em;
+}
+
+.test-body h4 {
+    font-weight: normal;
+    margin-bottom: 2px;
+}
+
+.test-body:nth-child(2) h4 {
+    margin-top: 2px;
+}
+
+.test-body.level-2 {
+    margin-left: 2.5em;
+    margin-right: 2.5em;
+}
+
+.test-body {
+    margin-left: 1.5em;
+    margin-right: 1.5em;
+}
+
+.disabled-placeholder {
+    height: 1em;
+    background: #aba9af;
+}
+
+
+@media only screen and (max-width: 600px) {
+    body {
+        margin: 1em;
+    }
+}
+
+  
