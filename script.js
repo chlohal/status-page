@@ -32,6 +32,7 @@ for(var i = 0; i < data.TestData.length; i++) {
 for(var i = 0; i < data.TestData.length; i++) {
     if(getTestCodeFromObj(data.TestData[i]) == 2 ||
        getTestCodeFromObj(data.TestData[i]) == 3) {
+        console.log(data.TestData[i])
         data.TestData.push(data.TestData.splice(i, 1)[0]);
     }
 }
@@ -150,9 +151,11 @@ for(var i = 0; i < data.TestData.length; i++) {
         testElem.appendChild(testBody);
         
         stati.appendChild(testElem);
+
+        uniqueNamesElems[bareName] = testElem;
     }
 
-    uniqueNamesElems[bareName] = testElem;
+    
 }
 
 function testCodeCombination(num1,num2) {
