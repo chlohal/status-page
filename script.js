@@ -178,7 +178,7 @@ function makeFilterChip(filterRecord) {
     filterDeleteButton.onclick = function() {
         let url = window.location.toString();
         for(var i = 0; i < filterRecord.filter.length; i++) {
-            url = url.replace(filter.name + ":" + filterRecord.filter[i], "");
+            url = url.replace(filterRecord.name + ":" + filterRecord.filter[i], "");
         }
         window.location.replace(url);
     }
@@ -196,10 +196,12 @@ function addFilterChips(filters) {
 
     let filterNames = Object.keys(filters);
     for(var i = 0; i < filterNames.length; i++)
-        filterDisplay.appendChild(makeFilterChip({
-            name: filterNames[i],
-            filter: filters[filterNames[i]]
-        }))
+        if(filterNames[i] != "") {
+            filterDisplay.appendChild(makeFilterChip({
+                name: filterNames[i],
+                filter: filters[filterNames[i]]
+            }));
+        }
 }
 
 function getUptimeDayCount() {
