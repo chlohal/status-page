@@ -38,15 +38,15 @@ header h1 {
 }
 
 .status.operational .status-display {
-    color: #7aca55;
+    color: #8cc473;
 }
 
 .status.outage .status-display {
-    color: #e22b31;
+    color: #da4045;
 }
 
 .status.partial-outage .status-display {
-    color: #eead34;
+    color: #e2b155;
 }
 
 .status.not-online .status-display {
@@ -60,15 +60,15 @@ header h1 {
 
 
 .test-body.operational .status-display {
-    color: #7aca55;
+    color: #8cc473;
 }
 
 .test-body.outage .status-display {
-    color: #e22b31;
+    color: #da4045;
 }
 
 .test-body.partial-outage .status-display {
-    color: #eead34;
+    color: #e2b155;
 }
 
 .test-body.not-online .status-display {
@@ -79,10 +79,43 @@ header h1 {
     color: #4e8a82;
 }
 
+#filter-list {
+    list-style-type: none;
+    margin-bottom: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+}
 
-.disabled span.down,
-.disabled span.up {
-    color: #4f4e55;
+#filter-heading {
+    display: none;
+}
+
+#filter-list li {
+    align-items: center;
+    padding: 0.75em;
+    height: 2em;
+    margin-right: 0.25em;
+    width: max-content;
+    display: -ms-inline-flexbox;
+    display: inline-flex;
+    background: #dbdadd;
+    border-radius: 1em;
+}
+
+#filter-list li h5 {
+    display: inline-block;
+    font-size: inherit;
+    margin: 0;
+}
+
+#filter-list li button {
+    padding: 0px;
+    font-weight: bold;
+    border: none;
+    background: none;
+    margin-left: 0.25em;
+    cursor: pointer;
 }
 
 #stati h3 {
@@ -101,22 +134,24 @@ header h1 {
     display: flex;
     padding: 0;
     margin: 0;
+    height: 100%;
 }
 
 .status li {
     display: inline-block;
-    height: 1em;
+    height: 100%;
     flex-grow: 1;
-    margin: 2px;
+    border: 2px #fafafa solid;
     position: relative;
 }
 
-.status li::before {
+.status li.tooltip::before {
     background: #403f41;
     width: 1em;
     height: 1em;
     transform: rotate(45deg);
-    content: "";
+    content: attr(tooltip);
+    font-size: 0;
     position: absolute;
     left: 0;
     top: 100%;
@@ -134,16 +169,16 @@ header h1 {
     display: block;
 }
 
-.status li::after {
+.status li.tooltip::after {
     position:  absolute;
     left: 10%;
-    top: 150%;
+    top: 125%;
     right: 10%;
     min-width: max-content;
     color: #fcfcfc;
     padding: 0.25em;
     background: #403f41;
-    content: attr(point);
+    content: attr(tooltip);
     text-align: center;
     opacity: 0;
     transition: 0.1s opacity, 0s display 0.1s;
@@ -157,9 +192,72 @@ header h1 {
     opacity: 1;
 }
 
+.graph-parent {
+    transition: 0.2s height;
+    height: 2em;
+}
+
+.graph-group .graph-parent {
+    margin-bottom: 0.5em;
+}
+
+.graph-group .graph-parent:last-child {
+    margin-bottom: 0;
+}
+
+.graph-parent.has-placeholder {
+    height: 1.5em;
+}
+
+.graph-parent.has-ping-graph {
+    height: 3em;
+}
+
+.graph-parent.has-fine-uptime {
+    height: 2em;
+}
+
+.graph-parent:empty {
+    height: 1em;
+}
+
+.graph-parent svg {
+    width: 100%;
+    height: 100%;
+    margin: 3px;
+    color: #8cc473;
+}
+
+.graph-parent svg path {
+    fill: transparent;
+    stroke: #004d40;
+    stroke-width: 2px;
+}
+
+svg text {
+    fill: #3a3a3a;
+    background: #fff;
+    font-size: 10px;
+}
+
+.graph-skeleton {
+    height: 100%;
+    background: linear-gradient(-45deg, #dbdadd, #e7e6e6);
+    animation: bgshift 2s infinite;
+}
+
+.graph-parent svg path.hor-line {
+    stroke: #9d9d9d;
+    stroke-width: 0.5px;
+}
+
 #announce {
     line-height: 1.5em;
     margin: 1em;
+}
+
+#announce blockquote sup {
+display: none;
 }
 
 .test-body h4 {
@@ -177,15 +275,40 @@ header h1 {
     margin-right: 1.5em;
 }
 
-.disabled-placeholder {
-    height: 1em;
-    background: #aba9af;
+.placeholder {
+    height: 100%;
 }
 
-.maintenance-placeholder {
-    height: 1em;
-    background: #a6e0e4;
+.not-online .placeholder {
+    background-color: #e7e6e6;
+    background: linear-gradient(-45deg, #dbdadd, #f1f1f1);
 }
+
+.in-maintenance.placeholder {
+    background-color: #a6e0e4;
+}
+
+#load-parent {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 0px;
+    left: 0px;
+    background-color: #fcfcfc; 
+    flex-direction: column;
+}
+
+@keyframes bgshift {
+    from {
+        background-position-x: 0px 0vw;
+    }
+    to {
+        background-position: 0px 20vw;
+    }
+} 
 
 
 @media only screen and (max-width: 5.5in) {
@@ -194,4 +317,33 @@ header h1 {
     }
 }
 
+
+/*
+CSS Loader (from loading.io
+*/
+
+.lds-dual-ring {
+    display: inline-block;
+    width: 80px;
+    height: 80px;
+  }
+  .lds-dual-ring:after {
+    content: " ";
+    display: block;
+    width: 64px;
+    height: 64px;
+    margin: 8px;
+    border-radius: 50%;
+    border: 6px solid #110122;
+    border-color: #110122 transparent #110122 transparent;
+    animation: lds-dual-ring 1.2s linear infinite;
+  }
+  @keyframes lds-dual-ring {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
   

@@ -11,13 +11,26 @@
         
         
         <script>var data; function run(json) { data = json }</script>
-        <script src="https://app.statuscake.com/Workfloor/PublicReportHandler.php?PublicID=TkQbVyBFG8&callback=run"></script>
+        <script src="https://app.statuscake.com/Workfloor/PublicReportHandler.php?PublicID=TkQbVyBFG8&callback=run" defer></script>
         <script src="script.js" defer></script>
+
+        <!--<script src="https://counter.clh.sh/counter.js" defer async></script>-->
     </head>
     <body>
         <header></header>
         <main>
-          
+            <div id="load-parent">
+                <h2>Loading status data...</h2>
+                <div class="lds-dual-ring"></div>
+            </div>
+            <h2 id="filter-heading">Display Filters: </h2>
+            <ul id="filter-list"></ul>
+            <h2>System Status:</h2>
+            <div id="stati">
+
+            </div>
+            <h2>Status Log:</h2>
+            <p id="announce"></p>
         </main>
     </body>
 </html>
