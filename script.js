@@ -1,5 +1,7 @@
 let header = document.querySelector("header");
 
+let masterTestRecord = {};
+
 populatePageHeader(header, data);
 
 let announce = document.getElementById("announce");
@@ -17,34 +19,48 @@ let testParents = {};
 
 let queryParams = new URLSearchParams(location.search);
 
-if(queryParams.has("filter")) {
-    let filter = getTestProps(`{${queryParams.get("filter")}}`);
+parseAndLoadFilterChips();
 
-    if(Object.keys(filter).length > 0) document.getElementById("filter-heading").style.display = "block";
+let searchInput = document.getElementById("filter-search-input");
+searchInput.addEventListener("keyup", function(event) {
+    console.log(event);
+    if(event.keyCode == 13) {
+        addSearchFilter(searchInput.value);
+        searchInput.value = "";
+    }
+});
 
-    addFilterChips(filter);
-}
+window.addEventListener("popstate", refilterTests);
 
 
-loadTestPage(data);
+buildNewPage(data.TestData);
 
-function loadTestPage(pageData) {
+function buildNewPage(pageTests) {
+
+    for(var i = 0; i < pageTests.length; i++) {
+        if(!masterTestRecord[pageTests[i].TestID]) {
+            masterTestRecord[pageTests[i].TestID] = pageTests[i];
+        } else if(i == 0) {
+            console.log(pageTests);
+        }
+    }
 
     //filter tests by query params
-    
     let displayedTests =  [];
 
     if(queryParams.has("filter")) {
         let filter = getTestProps(`{${queryParams.get("filter")}}`);
 
-        for(var i = 0; i < pageData.TestData.length; i++) {
-            let props = getTestProps(pageData.TestData[i].Name);
+        for(var i = 0; i < pageTests.length; i++) {
+            let props = getTestProps(pageTests[i].Name);
 
-            addSpecialProps(props, pageData.TestData[i]);
+            addSpecialProps(props, pageTests[i]);
             
-            if(matchProps(props, filter)) displayedTests.push(pageData.TestData[i])
+            if(matchProps(props, filter)) displayedTests.push(pageTests[i])
         }
-    } else displayedTests = pageData.TestData;
+    } else displayedTests = pageTests;
+
+    console.log(displayedTests);
 
     //count category names in order to decide if
     //tests will be rendered as subheadings later
@@ -109,14 +125,60 @@ function loadTestPage(pageData) {
 
 
 
+
+function parseAndLoadFilterChips() {
+    if(queryParams.has("filter")) {
+
+        let filter = getTestProps(`{${queryParams.get("filter")}}`);
+    
+        if(Object.keys(filter).length > 0) document.getElementById("filter-heading").style.display = "block";
+        else document.getElementById("filter-heading").style.display = "none";
+    
+        clearAllChildren(document.getElementById("filter-list"));
+
+        addFilterChips(filter);
+    }
+}
+
+function addSearchFilter(filter) {
+    let filterAsProps = getTestProps(`{${filter}}`);
+
+    let filterQuery = ""
+    if(queryParams.get("filter")) filterQuery = queryParams.get("filter") + ",";
+
+    if(Object.keys(filterAsProps).length > 0) {
+        filterQuery += filter;
+    } else {
+        filterQuery += "inname:" + filter.replace(/,/g,"");
+    }
+
+    queryParams.set("filter", filterQuery);
+
+    history.pushState(null, "Status", "?" + queryParams.toString());
+    refilterTests();
+}
+
+function refilterTests() {
+    queryParams = new URLSearchParams(location.search);
+    clearAllChildren(document.getElementById("stati"));
+
+    testParents = {};
+    categoryNameCounts = {};
+
+    parseAndLoadFilterChips();
+    buildNewPage(Object.values(masterTestRecord));
+}
+
+
 function addSpecialProps(basicProps, test) {
     let statusCode = getTestStatusCodeFromObj(test) + "";
 
     basicProps.status = [statusCode];
+    basicProps.rawname = [test.Name];
 }
 
 function testPageLoadedCallback(pageData) {
-    loadTestPage(pageData);
+    buildNewPage(pageData.TestData);
 }
 
 function loadNewPage(pageID) {
@@ -176,11 +238,18 @@ function makeFilterChip(filterRecord) {
     let filterDeleteButton = document.createElement("button");
     filterDeleteButton.innerHTML = "&times;"
     filterDeleteButton.onclick = function() {
-        let url = window.location.toString();
+        let url = decodeURIComponent(queryParams.toString());
         for(var i = 0; i < filterRecord.filter.length; i++) {
             url = url.replace(filterRecord.name + ":" + filterRecord.filter[i], "");
         }
-        window.location.replace(url);
+        url = url.replace(/,$/,"");
+
+        if(url == "filter=") url = "";
+
+        chip.parentElement.removeChild(chip);
+
+        history.pushState(null, "Status", "?" + url);
+        refilterTests();
     }
 
 
@@ -268,6 +337,8 @@ function matchProps(props, filters) {
             }
 
             if(!filterPass) result = false;
+        } else if(filterName == "inname") {
+            if(props.rawname[0].toLowerCase().indexOf(filters.inname[0].toLowerCase()) == -1) result = false; 
         } else {
             result = false;
         }
@@ -327,8 +398,6 @@ function getDayPingAverages(detailData) {
 
         lastDay = day;
 
-        if(isNaN(day)) alert(day);
-
         if(!days[day]) {
             days[day] = {
                 accumulation: entry[1],
@@ -375,6 +444,7 @@ function buildPingGraph(detailData, scale) {
 
 function loadedPingGraphCb(testGraphElem, detailData) {
     removeSkeletonGraph(testGraphElem);
+    console.log(testGraphElem);
 
     let scale = getElemSize(testGraphElem);
     testGraphElem.appendChild(buildPingGraph(detailData,scale));
@@ -436,32 +506,47 @@ function getDayUptimePercentage(uptimePeriods, day) {
     else return -1;
 }
 
-function detailDataLoadedCallback(testGraphElem,loadType) {
+function detailDataLoadedCallback(testGraphElem,loadType,testID) {
     testGraphElem.classList.add(`has-${loadType}`);
+    
     return function(detailData) {
+        masterTestRecord[testID].detailData[loadType] = detailData;
+
         if(loadType == "ping-graph") loadedPingGraphCb(testGraphElem, detailData);
         else if (loadType == "fine-uptime") loadedFineUptimeCb(testGraphElem, detailData);
     }
 }
 
 function loadPingGraph(testGraphElem, testID) {
-    window["pingGraphRun" + testID] = detailDataLoadedCallback(testGraphElem,"ping-graph");
-    let url = `https://app.statuscake.com/Workfloor/API/influx_public.php?Type=Chart&TestID=${testID}&tz=America/New_York&callback=pingGraphRun${testID}`;
+    if(!masterTestRecord[testID].detailData["ping-graph"]) {
+        window["pingGraphRun" + testID] = detailDataLoadedCallback(testGraphElem,"ping-graph",testID);
+        
+        
+        let url = `https://app.statuscake.com/Workfloor/API/influx_public.php?Type=Chart&TestID=${testID}&tz=America/New_York&callback=pingGraphRun${testID}`;
 
-    let dynamicScriptElem = document.createElement("script");
-    dynamicScriptElem.src = url;
+        let dynamicScriptElem = document.createElement("script");
+        dynamicScriptElem.src = url;
 
-    document.head.appendChild(dynamicScriptElem);
+        document.head.appendChild(dynamicScriptElem);
+    } else {
+        setTimeout(function() {
+            detailDataLoadedCallback(testGraphElem,"ping-graph", testID)(masterTestRecord[testID].detailData["ping-graph"]);
+        }, 10);
+    }
 }
 
 function loadFineUptime(testGraphElem, testID) {
-    window["fineUptimeRun" + testID] = detailDataLoadedCallback(testGraphElem,"fine-uptime");
-    let url = `https://app.statuscake.com/Workfloor/Get.Status.Perioids.php?callback=fineUptimeRun${testID}&PublicID=TkQbVyBFG8&tz=America/New_York&VID=${testID}`;
+    if(!masterTestRecord[testID].detailData["fine-uptime"]) {
+        window["fineUptimeRun" + testID] = detailDataLoadedCallback(testGraphElem,"fine-uptime",testID);
+        let url = `https://app.statuscake.com/Workfloor/Get.Status.Perioids.php?callback=fineUptimeRun${testID}&PublicID=TkQbVyBFG8&tz=America/New_York&VID=${testID}`;
 
-    let dynamicScriptElem = document.createElement("script");
-    dynamicScriptElem.src = url;
+        let dynamicScriptElem = document.createElement("script");
+        dynamicScriptElem.src = url;
 
-    document.head.appendChild(dynamicScriptElem);
+        document.head.appendChild(dynamicScriptElem);
+    } else {
+        detailDataLoadedCallback(testGraphElem,"fine-uptime", testID)(masterTestRecord[testID].detailData["fine-uptime"]);
+    }
 }
 
 function removeLoadSpinner() {
@@ -470,9 +555,10 @@ function removeLoadSpinner() {
 }
 
 function clearAllChildren(element) {
-    for(var i = 0; i < element.children.length; i++) {
-        element.removeChild(element.children[i]);
+    while(element.children.length > 0) {
+        element.removeChild(element.children[0]);
     }
+    console.log("cac finished");
 }
 
 function populatePageHeader(header, data) {
@@ -618,6 +704,8 @@ function buildTestGraph(testObject) {
     testGraphGroup.classList.add("graph-group");
     
     let testProps = getTestProps(testObject.Name);
+
+    if(!masterTestRecord[testObject.TestID].detailData) masterTestRecord[testObject.TestID].detailData = {};
 
     if(testProps.defdisp) {
         for(var i = 0; i < testProps.defdisp.length; i++) {
