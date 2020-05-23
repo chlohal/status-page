@@ -80,13 +80,14 @@ function buildNewPage(pageTests) {
         let thisTest = displayedTests[i];
 
         let categoryName = getCategoryName(thisTest.Name);
+        let testName = thisTest.Name;
         let testStatusCode = getTestStatusCodeFromObj(thisTest);
 
         let testBody = makeEmptyBodyForStatus(testStatusCode);
         
 
 
-        if(categoryHasSubheading(categoryName)) {
+        if(testIsSubheading(testName)) {
             let testSubheading = buildSubheading(thisTest,testStatusCode);
             
             testBody.appendChild(testSubheading);
@@ -105,7 +106,7 @@ function buildNewPage(pageTests) {
             addNewSubtest(testParents[categoryName], testBody);
         } else {
             //If the category has subheadings, they will hold their own details, but if not, then the main heading holds them. 
-            let testParent = buildTestParent(categoryName, testStatusCode, categoryHasSubheading(categoryName) ? false : thisTest);
+            let testParent = buildTestParent(categoryName, testStatusCode, testIsSubheading(testName) ? false : thisTest);
 
             testParents[categoryName] = testParent;
 
@@ -472,9 +473,9 @@ function getDayUptimePercentage(uptimePeriods, day) {
         //if period covers day, just return the period's state
         if(period.Start_Unix < dayStart && period.End_Unix > dayEnd) {
             //if it was not online, mark as such
-            if(period.anno) {
-                if(period.anno.startsWith("NO::")) return -2;
-                if(period.anno.startsWith("IM::")) return -3;
+            if(period.Anno) {
+                if(period.Anno.startsWith("NO::")) return -2;
+                if(period.Anno.startsWith("IM::")) return -3;
             }
 
             if(period.Status == "Down") return 0;
@@ -510,6 +511,8 @@ function detailDataLoadedCallback(testGraphElem,loadType,testID) {
     
     return function(detailData) {
         masterTestRecord[testID].detailData[loadType] = detailData;
+
+        if(loadType == "fine-uptime") addDowntimePeriodDetails(masterTestRecord[testID]);
 
         if(loadType == "ping-graph") loadedPingGraphCb(testGraphElem, detailData);
         else if (loadType == "fine-uptime") loadedFineUptimeCb(testGraphElem, detailData);
@@ -620,8 +623,11 @@ function addNewSubtest(testMainElem, newTestBody) {
     testMainElem.classList.add("has-level-2");
 }
 
-function categoryHasSubheading(categoryName) {
-    return categoryNameCounts[categoryName] > 1;
+function testIsSubheading(testName) {
+    let props = getTestProps(testName);
+    if(props.iscategory && props.iscategory[0] == "1") return true;
+
+    return categoryNameCounts[getCategoryName(testName)] > 1;
 }
 
 function statusCodeHasGraph(testStatusCode) {
@@ -647,6 +653,39 @@ function buildTestHead(testName, testStatusCode, testObject) {
     return testHead;
 }
 
+function addDowntimePeriodDetails(testObject) {
+    let infoButton = document.getElementById(`info-button-${testObject.TestID}`);
+    if(!infoButton) return false;
+
+    let modal = infoButton.querySelector(".info-modal");
+
+    let explainHeader = document.createElement("h4");
+    explainHeader.textContent = "Past Downtime Periods:";
+
+    modal.appendChild(explainHeader);
+
+    let periodsList = document.createElement("ol");
+
+    let uptimePeriods = testObject.detailData["fine-uptime"];
+    for(var i = 0; i < uptimePeriods.length; i++) {
+        if(uptimePeriods[i].Status == "Down") {
+            let period = uptimePeriods[i];
+            let periodListItem = document.createElement("li");
+
+            let startDate = new Date(period.Start);
+            let endDate = new Date(period.End);
+
+            let description = testCodeDescription(getTestStatusCodeFromObj(period));
+
+            periodListItem.textContent = `${description} from ${startDate.toLocaleString()} to ${endDate.toLocaleString()} (${period.Period.trim()})`;
+            
+            periodsList.appendChild(periodListItem);
+        }
+    }
+
+    modal.appendChild(periodsList);
+}
+
 function buildTestDetailsButton(testObject) {
     let testProps = getTestProps(testObject.Name);
     let propNames = Object.keys(testProps);
@@ -654,6 +693,7 @@ function buildTestDetailsButton(testObject) {
     if(propNames.length == 0) return document.createElement("span");
 
     let infoButton = document.createElement("button");
+    infoButton.id = `info-button-${testObject.TestID}`;
     infoButton.classList.add("info-button");
     infoButton.setAttribute("tabindex", 0);
 
@@ -690,7 +730,7 @@ function buildTestDetailsButton(testObject) {
 
         infoList.appendChild(infoNameElem);
         infoList.appendChild(infoValueElem);
-    }
+    };
 
     infoModal.appendChild(modalHeader);
 
@@ -904,6 +944,7 @@ function testCodeDescription(code) {
 }
 
 function getTestStatusCodeFromObj(thisTest) {
+    thisTest.Name = thisTest.Name || thisTest.Anno || "";
     if(thisTest.Name.startsWith("NO::") || thisTest.CheckRate == "86400") {
         return 2;
     } else if(thisTest.Name.startsWith("IM::")) {
