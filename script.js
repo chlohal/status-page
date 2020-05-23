@@ -23,7 +23,6 @@ parseAndLoadFilterChips();
 
 let searchInput = document.getElementById("filter-search-input");
 searchInput.addEventListener("keyup", function(event) {
-    console.log(event);
     if(event.keyCode == 13) {
         addSearchFilter(searchInput.value);
         searchInput.value = "";
@@ -40,8 +39,6 @@ function buildNewPage(pageTests) {
     for(var i = 0; i < pageTests.length; i++) {
         if(!masterTestRecord[pageTests[i].TestID]) {
             masterTestRecord[pageTests[i].TestID] = pageTests[i];
-        } else if(i == 0) {
-            console.log(pageTests);
         }
     }
 
@@ -59,8 +56,6 @@ function buildNewPage(pageTests) {
             if(matchProps(props, filter)) displayedTests.push(pageTests[i])
         }
     } else displayedTests = pageTests;
-
-    console.log(displayedTests);
 
     //count category names in order to decide if
     //tests will be rendered as subheadings later
@@ -110,7 +105,7 @@ function buildNewPage(pageTests) {
             addNewSubtest(testParents[categoryName], testBody);
         } else {
             //If the category has subheadings, they will hold their own details, but if not, then the main heading holds them. 
-            let testParent = buildTestParent(categoryName, testStatusCode, categoryHasSubheading(categoryName) ? false : thisTest.Name);
+            let testParent = buildTestParent(categoryName, testStatusCode, categoryHasSubheading(categoryName) ? false : thisTest);
 
             testParents[categoryName] = testParent;
 
@@ -242,6 +237,8 @@ function makeFilterChip(filterRecord) {
         for(var i = 0; i < filterRecord.filter.length; i++) {
             url = url.replace(filterRecord.name + ":" + filterRecord.filter[i], "");
         }
+
+        url = url.replace(/filter=,/,"filter=");
         url = url.replace(/,$/,"");
 
         if(url == "filter=") url = "";
@@ -444,7 +441,6 @@ function buildPingGraph(detailData, scale) {
 
 function loadedPingGraphCb(testGraphElem, detailData) {
     removeSkeletonGraph(testGraphElem);
-    console.log(testGraphElem);
 
     let scale = getElemSize(testGraphElem);
     testGraphElem.appendChild(buildPingGraph(detailData,scale));
@@ -476,7 +472,10 @@ function getDayUptimePercentage(uptimePeriods, day) {
         //if period covers day, just return the period's state
         if(period.Start_Unix < dayStart && period.End_Unix > dayEnd) {
             //if it was not online, mark as such
-            if(period.anno && period.anno.startsWith("NO::")) return -1;
+            if(period.anno) {
+                if(period.anno.startsWith("NO::")) return -2;
+                if(period.anno.startsWith("IM::")) return -3;
+            }
 
             if(period.Status == "Down") return 0;
             else return 100;
@@ -503,7 +502,7 @@ function getDayUptimePercentage(uptimePeriods, day) {
     if(Date.now() / 1000 < dayEnd) secondsInDaySoFar = Math.round(Date.now() / 1000) % 86400
 
     if(hasData) return 100 - Math.round(secsDown / secondsInDaySoFar * 100);
-    else return -1;
+    else return -2;
 }
 
 function detailDataLoadedCallback(testGraphElem,loadType,testID) {
@@ -558,7 +557,6 @@ function clearAllChildren(element) {
     while(element.children.length > 0) {
         element.removeChild(element.children[0]);
     }
-    console.log("cac finished");
 }
 
 function populatePageHeader(header, data) {
@@ -591,7 +589,7 @@ function testAlreadyHasParent(categoryName) {
     return testParents.hasOwnProperty(categoryName);
 }
 
-function buildTestParent(categoryName, testStatusCode, encodedName) {
+function buildTestParent(categoryName, testStatusCode, testObject) {
     let testParent = document.createElement("div");
 
     testParent.classList.add("status");
@@ -599,7 +597,7 @@ function buildTestParent(categoryName, testStatusCode, encodedName) {
     testParent.classList.add(testCodeClassName(testStatusCode));
 
     //add the header, which has the primary title and primary state.
-    testParent.appendChild(buildTestHead(categoryName, testStatusCode, encodedName || false));
+    testParent.appendChild(buildTestHead(categoryName, testStatusCode, testObject || false));
 
     return testParent;
 }
@@ -630,7 +628,7 @@ function statusCodeHasGraph(testStatusCode) {
     return !(testStatusCode == 2 || testStatusCode == 3);
 }
 
-function buildTestHead(testName, testStatusCode, ) {
+function buildTestHead(testName, testStatusCode, testObject) {
     let testHead = document.createElement("div");
     testHead.classList.add("head");
 
@@ -640,17 +638,77 @@ function buildTestHead(testName, testStatusCode, ) {
     let testStatus = buildStatusState(testStatusCode);
 
     
+    
     testHead.appendChild(testTitle);
+    if(testObject) testHead.appendChild(buildTestDetailsButton(testObject));
     testHead.appendChild(buildNameStatusSeperator());
     testHead.appendChild(testStatus);
 
     return testHead;
 }
 
+function buildTestDetailsButton(testObject) {
+    let testProps = getTestProps(testObject.Name);
+    let propNames = Object.keys(testProps);
+
+    if(propNames.length == 0) return document.createElement("span");
+
+    let infoButton = document.createElement("button");
+    infoButton.classList.add("info-button");
+    infoButton.setAttribute("tabindex", 0);
+
+    let infoModal = document.createElement("div");
+    infoModal.classList.add("info-modal");
+
+    infoButton.addEventListener("click", function(event) {
+        event.stopPropagation();
+
+        let currentModal = document.getElementById("current-modal");
+        if(currentModal) currentModal.id = "";
+
+        if(currentModal != infoModal) infoModal.id = "current-modal";
+    });
+
+    document.addEventListener("click", function() {
+        let currentModal = document.getElementById("current-modal");
+        if(currentModal) currentModal.id = "";
+    });
+
+    let modalHeader = document.createElement("h4");
+    modalHeader.textContent = "Properties:";
+
+    let infoList = document.createElement("dl");
+
+    for(var i = 0; i < propNames.length; i++) {
+
+        if(!propertyIsPublic(propNames[i])) continue
+        let infoNameElem = document.createElement("dt");
+        let infoValueElem = document.createElement("dd");
+
+        infoNameElem.textContent = propNames[i];
+        infoValueElem.textContent = testProps[propNames[i]].join(",");
+
+        infoList.appendChild(infoNameElem);
+        infoList.appendChild(infoValueElem);
+    }
+
+    infoModal.appendChild(modalHeader);
+
+    infoModal.appendChild(infoList);
+
+    infoButton.appendChild(infoModal);
+
+    if(Object.keys(testProps).length == 0) {}
+
+    return infoButton;
+}
+
 function buildSubheading(thisTest, testStatusCode) {
     let testSubheading = document.createElement("h4");
 
     testSubheading.textContent = getTestName(thisTest.Name);
+
+    testSubheading.appendChild(buildTestDetailsButton(thisTest));
 
     testSubheading.appendChild(buildNameStatusSeperator());
 
@@ -693,6 +751,9 @@ function buildTestGraphNode(uptimePercentage, dateText) {
     testUptimeNode.style.backgroundColor = makeGraphNodeBgColor(uptimePercentage / 100);
     if(uptimePercentage >= 0) {
         testUptimeNode.setAttribute("tooltip",`${dateText} - ${uptimePercentage}%`);
+        testUptimeNode.classList.add("tooltip");
+    } else {
+        testUptimeNode.setAttribute("tooltip",`${dateText} - ${testCodeDescription(-1 * uptimePercentage)}`);
         testUptimeNode.classList.add("tooltip");
     }
     
@@ -753,7 +814,9 @@ function makeGraphParent() {
 }
 
 function makeGraphNodeBgColor(percent) {
-    if(percent < 0) return "#ececec";
+    if(percent * 100 == -2) return "#ececec";
+    if(percent * 100 == -3) return "#9ae4da";
+    
     return `hsl(${Math.floor(percent * 120)}, 50%, 60%)`; 
 }
 
@@ -812,6 +875,14 @@ function getTestProps(encodedName) {
     }
 
     return propData;
+}
+
+function propertyIsPublic(propertyName) {
+    let privateProperties = [
+        "defdisp"
+    ];
+
+    return !privateProperties.includes(propertyName);
 }
 
 function getTestName(encodedName) {

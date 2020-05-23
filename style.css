@@ -225,6 +225,83 @@ svg.icon {
     opacity: 1;
 }
 
+.info-button {
+    width: 1.125em;
+    height: 1.125em;
+    border-radius: 0.75em;
+    margin: 0.25em;
+    border: none;
+    padding: 0;
+    background: #4d4c4e;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    color: #fcfcfc;
+    font-weight: bold;
+    display: -ms-inline-flexbox;
+    display: inline-flex;
+    position: relative;
+    cursor: pointer;
+}
+
+.info-button::before {
+    content: "i";
+}
+
+.info-modal {
+    display: none;
+    position: absolute;
+    background: #fcfcfc;
+    color: #110122;
+    font-weight: normal;
+    font-size: 1rem;
+    text-align: left;
+    top: 1em;
+    left: 1em;
+    z-index: 1;
+    padding: 0.5em;
+    cursor: auto;
+    overflow: hidden;
+}
+
+.info-modal h4 {
+    margin: 0;
+    margin-bottom: 0.125em;
+    font-size: 1.125em;
+    font-weight: normal;
+}
+
+#current-modal.info-modal {
+    display: block;
+    box-shadow: #403f4150 0px 0px 4px 0px;
+}
+
+.info-modal dl {
+    margin: 0;
+    width: max-content;
+    
+    line-height: 1.5em;
+}
+
+.info-modal dt {
+    float: left;
+    clear: left;
+    display: block;
+}
+
+.info-modal dt::after {
+    content: ":\a0";
+}
+
+.info-modal dd {
+    margin: 0;
+    text-align: left;
+    float: left;
+    display: block;
+}
+
+dl:after {content:"";display:table;clear:both;}
+
 .graph-parent {
     transition: 0.2s height;
     height: 2em;
@@ -344,9 +421,17 @@ display: none;
 } 
 
 
-@media only screen and (max-width: 5.5in) {
+@media only screen and (max-width: 600px) {
     body {
         margin: 1em;
+    }
+
+    .info-modal {
+        position: fixed;
+        top: 55vh;
+        left: 0;
+        right: 0;
+        height: 45vh;
     }
 }
 
