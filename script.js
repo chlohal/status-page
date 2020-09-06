@@ -948,6 +948,9 @@ function getTestName(encodedName) {
     let propIndex = encodedName.indexOf("{");
     if(propIndex > 0) encodedName = encodedName.substring(0, propIndex);
     
+    //remove status code
+    encodedName = encodedName.replace(/^\w+::/, "");
+    
     if(!(/ \(([\w '\d]+)\)/).test(encodedName)) return encodedName;
     return (/ \(([\w '\d]+)\)/).exec(encodedName)[1]
 }
