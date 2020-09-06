@@ -96,9 +96,8 @@ function buildNewPage(pageTests) {
         }
 
 
-        //add graph, if applicable. If not, substitute a placeholder
+        //add graph, if applicable. 
         if(statusCodeHasGraph(testStatusCode)) testBody.appendChild(buildTestGraph(thisTest));
-        else testBody.appendChild(buildGraphPlaceholder());
 
 
         //if this category has a parent, the test should be added as a subheading, but otherwise, the test gets a new parent.
