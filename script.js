@@ -105,7 +105,7 @@ function buildNewPage(pageTests) {
             addNewSubtest(testParents[categoryName], testBody);
         } else {
             //If the category has subheadings, they will hold their own details, but if not, then the main heading holds them. 
-            let testParent = buildTestParent(categoryName, testStatusCode, testIsSubheading(testName) ? false : thisTest);
+            let testParent = buildTestParent(testIsSubheading(testName) ? categoryName : getTestName(testName), testStatusCode, testIsSubheading(testName) ? false : thisTest);
 
             testParents[categoryName] = testParent;
 
