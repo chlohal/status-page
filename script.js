@@ -944,6 +944,10 @@ function propertyIsPublic(propertyName) {
 }
 
 function getTestName(encodedName) {
+    //remove props
+    let propIndex = encodedName.indexOf("{");
+    if(propIndex > 0) encodedName = encodedName.substring(0, propIndex);
+    
     if(!(/ \(([\w '\d]+)\)/).test(encodedName)) return encodedName;
     return (/ \(([\w '\d]+)\)/).exec(encodedName)[1]
 }
