@@ -56,6 +56,25 @@ function buildNewPage(pageTests) {
             if(matchProps(props, filter)) displayedTests.push(pageTests[i])
         }
     } else displayedTests = pageTests;
+    
+    //display an empty state if there are no tests to be displayed
+    if(displayedTests.length == 0) {
+        stati.classList.add("empty");
+        let emptyState = document.createElement("div");
+        emptyState.id = "emptystate";
+        
+        emptyState.style.color = "#555"; emptyState.style.textAlign = "center";
+        
+        let emptyStateHeader = document.createElement("h3");
+        emptyStateHeader.textContent = "Nothing here!";
+        
+        let emptyStateBody = document.createTextNode("No tests were found that match your filters. Please try removing some filters and try again.");
+        
+        emptyState.appendChild(emptyStateHeader);
+        emptyState.appendChild(emptyStateBody);
+        
+        stati.appendChild(emptyState);
+    }
 
     //count category names in order to decide if
     //tests will be rendered as subheadings later
