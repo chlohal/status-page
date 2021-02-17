@@ -192,6 +192,7 @@ svg.icon {
     height: 100%;
     flex-grow: 1;
     position: relative;
+    transition: all 0.1s;
 }
 
 .status .graph-parent li:hover {
