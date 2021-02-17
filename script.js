@@ -490,6 +490,8 @@ function loadedFineUptimeCb(testGraphElem, detailData) {
 
     let testGraphList = document.createElement("ul");
 
+    testGraphList.appendChild(makeTooltip());
+
     var startTime = (Date.now() / 1000) - 86400 * getUptimeDayCount();
 
     for(
@@ -500,7 +502,18 @@ function loadedFineUptimeCb(testGraphElem, detailData) {
         testGraphList.appendChild(buildTestGraphNode(getDayUptimePercentage(detailData, time), (new Date(time*1000)).toLocaleDateString()));
     }
 
+    testGraphList.addEventListener("mouseleave", function() {
+        testGraphList.children[0].style.display = "none";
+    });
+
     testGraphElem.appendChild(testGraphList);
+}
+
+function makeTooltip() {
+    var tooltip = document.createElement("span");
+    tooltip.classList.add("tooltip-float");
+    tooltip.style.display = "none";
+    return tooltip;
 }
 
 function getDayUptimePercentage(uptimePeriods, day) {
@@ -840,22 +853,56 @@ function buildGraphPlaceholder() {
 function buildTestGraphNode(uptimePercentage, dateText) {
     let testUptimeNode = document.createElement("li");
 
-    testUptimeNode.style.background = makeGraphNodeBgColor(uptimePercentage / 100);
-    if(uptimePercentage >= 0) {
-        testUptimeNode.setAttribute("tooltip",`${dateText} - ${uptimePercentage}%`);
-        testUptimeNode.classList.add("tooltip");
-    } else {
-        testUptimeNode.setAttribute("tooltip",`${dateText} - ${testCodeDescription(-1 * uptimePercentage)}`);
-        testUptimeNode.classList.add("tooltip");
-    }
+    testUptimeNode.style.background = makeGraphNodeBgColor(uptimePercentage / 100, true);
+
+    var tooltipElem, tooltipElemBaseX, tooltipElemWidth;
 
     testUptimeNode.addEventListener("mousemove", function(event) {
         if(!testUptimeNode.parentElement) return false;
-        
-        var tooltippElem = testUptimeNode.parentElement.children[0]
+
+        if(!tooltipElem) {
+            tooltipElem = testUptimeNode.parentElement.children[0];
+            
+        }
+
+        tooltipElemBaseX = findX(tooltipElem);
+
+        tooltipElem.style.display = "flex";
+        tooltipElem.textContent = dateText + " - " +  uptimePercentage + "%";
+        tooltipElemWidth = tooltipElem.offsetWidth;
+
+        var offsetter = tooltipElem.offsetTop;
+
+        var mouseX = event.clientX;
+        var transformX = (mouseX - tooltipElemBaseX - tooltipElemWidth - offsetter);
+
+        var x = transformX;
+        if(x < 0) x += tooltipElemWidth + offsetter + offsetter;
+
+        tooltipElem.style.transform = `translateX(${x}px)`;
+    });
+
+    testUptimeNode.addEventListener("mouseenter", function() {
+        var c = makeGraphNodeBgColor(uptimePercentage / 100, false);
+        testUptimeNode.style.background = c;
+        if(testUptimeNode.parentElement) testUptimeNode.parentElement.style.background = c;
+    });
+
+    testUptimeNode.addEventListener("mouseleave", function() {
+        testUptimeNode.style.background = makeGraphNodeBgColor(uptimePercentage / 100, true);
     });
     
     return testUptimeNode;
+}
+
+function findX(elem) {
+    var x = elem.offsetLeft;
+    while(elem.offsetParent) {
+        elem = elem.offsetParent
+        x += elem.offsetLeft;
+    }
+
+    return x;
 }
 
 function buildTestGraph(testObject) {
@@ -911,11 +958,12 @@ function makeGraphParent() {
     return testGraphParent;
 }
 
-function makeGraphNodeBgColor(percent) {
+function makeGraphNodeBgColor(percent, gradient) {
     if(percent * 100 == -2) return "#ececec";
     if(percent * 100 == -3) return "#9ae4da";
     
-    return `linear-gradient(145deg, hsl(${Math.floor(percent * 120)}, 50%, 55%), hsl(${Math.floor(percent * 120)}, 50%, 65%))`; 
+    if(gradient) return `linear-gradient(145deg, hsl(${Math.floor(percent * 120)}, 50%, 55%), hsl(${Math.floor(percent * 120)}, 50%, 65%))`; 
+    else return `hsl(${Math.floor(percent * 120)}, 50%, 55%)`;
 }
 
 function testCodeCombination(num1,num2) {

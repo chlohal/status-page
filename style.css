@@ -194,6 +194,13 @@ svg.icon {
     position: relative;
 }
 
+.status .graph-parent li:hover {
+    z-index: 2;
+    box-shadow: 0.25em 0.25em 0.5em 0 #5553,
+                -0.25em -0.25em 0.5em 0 #fff3;
+    border-radius: 0.5em;
+}
+
 .info-button {
     width: 1.125em;
     height: 1.125em;
@@ -220,14 +227,14 @@ svg.icon {
 .info-modal {
     display: none;
     position: absolute;
-    background: #fcfcfc;
+    background: #FBF9F9;
     color: #110122;
     font-weight: normal;
     font-size: 1rem;
     text-align: left;
     top: 1em;
     left: 1em;
-    z-index: 1;
+    z-index: 3;
     padding: 0.5em;
     cursor: auto;
     overflow: hidden;
@@ -250,7 +257,6 @@ svg.icon {
 .info-modal dl {
     margin: 0;
     width: max-content;
-    
     line-height: 1.5em;
 }
 
@@ -360,6 +366,19 @@ display: none;
     margin-top: 2px;
 }
 
+.tooltip-float {
+    position: absolute;
+    background: #FBF9F9;
+    padding: 0.1em 0.325em;
+    border-radius: 0.25em;
+    top: 0.25em;
+    bottom: 0.25em;
+    display: flex;
+    align-items: center;
+    align-content: center;
+    z-index: 3;
+    pointer-events: none;
+}
 
 .test-body {
     margin-left: 1.5em;
