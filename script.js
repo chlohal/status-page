@@ -1,11 +1,15 @@
+if(data === undefined) {
+    var stDisp = document.querySelector("#load-parent h2");
+    stDisp.textContent = "Failed to load data";
+}
+
 let header = document.querySelector("header");
 
 let masterTestRecord = {};
 
 populatePageHeader(header, data);
 
-let announce = document.getElementById("announce");
-populateAnnouncements(announce, data);
+populateAnnouncements(document.createElement("div"), data);
 
 
 let main = document.querySelector("main");
@@ -368,7 +372,7 @@ function matchProps(props, filters) {
 }
 
 function reparseElement(elem) {
-    elem.outerHTML = elem.outerHTML + "";
+    if(elem) elem.outerHTML = elem.outerHTML + "";
 }
 
 function generateDetailPoint(detailIndex, detailCount, detailPoint, scale) {
@@ -495,8 +499,8 @@ function loadedFineUptimeCb(testGraphElem, detailData) {
     var startTime = (Date.now() / 1000) - 86400 * getUptimeDayCount();
 
     for(
-        var time = startTime, i = getUptimeDayCount() - 1;
-        i > 0;
+        var time = startTime, i = getUptimeDayCount();
+        i >= 0;
         i--, time+=86400)
     {
         testGraphList.appendChild(buildTestGraphNode(getDayUptimePercentage(detailData, time), (new Date(time*1000)).toLocaleDateString()));
@@ -505,6 +509,10 @@ function loadedFineUptimeCb(testGraphElem, detailData) {
     testGraphList.addEventListener("mouseleave", function() {
         testGraphList.children[0].style.display = "none";
     });
+
+    testGraphList.addEventListener("mouseenter", function() {
+        testGraphList.children[0].style.opacity = "0";
+    })
 
     testGraphElem.appendChild(testGraphList);
 }
@@ -853,22 +861,20 @@ function buildGraphPlaceholder() {
 function buildTestGraphNode(uptimePercentage, dateText) {
     let testUptimeNode = document.createElement("li");
 
+    testUptimeNode.setAttribute("data-uptime-percent", uptimePercentage);
     testUptimeNode.style.background = makeGraphNodeBgColor(uptimePercentage / 100, true);
 
-    var tooltipElem, tooltipElemBaseX, tooltipElemWidth;
+    var tooltipElem, tooltipElemBaseX, tooltipElemWidth, firstRun;
 
     testUptimeNode.addEventListener("mousemove", function(event) {
         if(!testUptimeNode.parentElement) return false;
 
-        if(!tooltipElem) {
-            tooltipElem = testUptimeNode.parentElement.children[0];
-            
-        }
+        tooltipElem = testUptimeNode.parentElement.firstChild;
 
         tooltipElemBaseX = findX(tooltipElem);
 
         tooltipElem.style.display = "flex";
-        tooltipElem.textContent = dateText + " - " +  uptimePercentage + "%";
+        tooltipElem.textContent = dateText + " - " +  formatUptimePercentage(uptimePercentage);
         tooltipElemWidth = tooltipElem.offsetWidth;
 
         var offsetter = tooltipElem.offsetTop;
@@ -880,12 +886,18 @@ function buildTestGraphNode(uptimePercentage, dateText) {
         if(x < 0) x += tooltipElemWidth + offsetter + offsetter;
 
         tooltipElem.style.transform = `translateX(${x}px)`;
+
+        if(tooltipElem.style.opacity != "1" && !firstRun) tooltipElem.style.opacity = "1";
+
+        firstRun = false;
     });
 
     testUptimeNode.addEventListener("mouseenter", function() {
         var c = makeGraphNodeBgColor(uptimePercentage / 100, false);
         testUptimeNode.style.background = c;
         if(testUptimeNode.parentElement) testUptimeNode.parentElement.style.background = c;
+
+        firstRun = true;
     });
 
     testUptimeNode.addEventListener("mouseleave", function() {
@@ -893,6 +905,12 @@ function buildTestGraphNode(uptimePercentage, dateText) {
     });
     
     return testUptimeNode;
+}
+
+function formatUptimePercentage(pc) {
+    if(pc == -2) return "Not Online";
+    if(pc == -3) return "In Maintenance";
+    else return pc + "%";
 }
 
 function findX(elem) {

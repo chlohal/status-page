@@ -176,23 +176,13 @@ svg.icon {
     border-radius: 0.25em;
 }
 
-.status .graph-parent ul::before {
-    position: absolute;
-    z-index: 1;
-    pointer-events: none;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    content: "";
-}
-
 .status .graph-parent li {
     display: inline-block;
     height: 100%;
     flex-grow: 1;
     position: relative;
-    transition: all 0.1s;
+    transition: all 0.5s;
+    z-index: 1;
 }
 
 .status .graph-parent li:hover {
@@ -200,6 +190,25 @@ svg.icon {
     box-shadow: 0.25em 0.25em 0.5em 0 #5553,
                 -0.25em -0.25em 0.5em 0 #fff3;
     border-radius: 0.5em;
+}
+
+li[data-uptime-percent="-2"] {
+    z-index: 0;
+}
+
+
+li[data-uptime-percent="-2"] + li:not([data-uptime-percent="-2"]) {
+
+}
+
+li[data-uptime-percent="-2"] + li:not([data-uptime-percent="-2"])::before {
+    content: "";
+    height: 100%;
+    position: absolute;
+    left: -0.5em;
+    width: 0.5em;
+    display: block;
+    background: linear-gradient(90deg, #0000, #fff9);
 }
 
 .info-button {
