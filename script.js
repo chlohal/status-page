@@ -98,7 +98,7 @@ function buildNewPage(pageTests) {
 
         //add graph, if applicable. If not, substitute a placeholder
         if(statusCodeHasGraph(testStatusCode)) testBody.appendChild(buildTestGraph(thisTest));
-        else testBody.appendChild(buildGraphPlaceholder());
+        //else testBody.appendChild(buildGraphPlaceholder());
 
 
         //if this category has a parent, the test should be added as a subheading, but otherwise, the test gets a new parent.
@@ -272,8 +272,7 @@ function addFilterChips(filters) {
 }
 
 function getUptimeDayCount() {
-    if(window.innerWidth < 600) return 30;
-    else return 90;
+    return 30;
 }
 
 function roundToPlace(num, place) {
@@ -289,8 +288,9 @@ function makeHorizontalLine(x, length) {
 
 function makeSvgText(y, x, text) {
     let textElem = document.createElement("text");
-    textElem.setAttribute("y", y);
+    textElem.setAttribute("y", y + 20);
     textElem.setAttribute("x", x);
+    textElem.style.fontSize = 20;
     textElem.textContent = text;
 
     return textElem;
@@ -353,11 +353,11 @@ function reparseElement(elem) {
     elem.outerHTML = elem.outerHTML + "";
 }
 
-function generateDetailPoint(detailIndex,detailPoint, scale) {
-    return `L ${detailIndex*scale.x}, ${scale.y-(detailPoint*scale.y)}`;
+function generateDetailPoint(detailIndex, detailCount, detailPoint, scale) {
+    return `L ${getXCoordOfPingGraphPoint(detailIndex, detailCount, scale.x)}, ${scale.y-(detailPoint*scale.y)}`;
 }
 
-function findGraphScale(detailData) {
+function findGraphMax(detailData) {
     let max = 0;
     for(var i = 0; i < detailData.length; i++) {
         if(detailData[i].average > max) max = detailData[i].average;
@@ -367,10 +367,9 @@ function findGraphScale(detailData) {
 }
 
 function getElemSize(elem) {
-    let rect = elem.getBoundingClientRect();
     return {
-        x: rect.width,
-        y: rect.height
+        x: elem.offsetWidth,
+        y: elem.offsetHeight
     };
 }
 
@@ -419,17 +418,31 @@ function buildPingGraph(detailData, scale) {
 
     svg.setAttribute("height",scale.y);
     svg.setAttribute("width",scale.x);
+
+    scale.x *= 2;
+    scale.y *= 2;
+
     svg.setAttribute("viewBox",`0 0 ${scale.x} ${scale.y}`);
     svg.setAttribute("preserveAspectRatio","xMidYMid meet");
 
-    buildGraphOverlay(svg, scale, findGraphScale(displayedData));
+    let graphHeight = findGraphMax(displayedData);
 
-    let graphPathDrawAttr = `M0,${scale.y - (displayedData[0].average*100) }`;
+    buildGraphOverlay(svg, scale, graphHeight);
+
+    let graphPathDrawAttr = "";
+    let drawingLine = false;
     for(var i = 0; i < displayedData.length; i++) {
-        graphPathDrawAttr += generateDetailPoint(i/displayedData.length,displayedData[i].average/findGraphScale(displayedData), scale);
+        if(!drawingLine) {
+            graphPathDrawAttr = `M${getXCoordOfPingGraphPoint(i, displayedData.length, scale.x)},${scale.y - (displayedData[i].average/graphHeight*scale.y)}`
+        }
+        if(displayedData[i].average > 0) {
+            drawingLine = true;
+            graphPathDrawAttr += generateDetailPoint(i, displayedData.length,displayedData[i].average/graphHeight, scale);
+        }
     }
 
-    //graphPathDrawAttr += `L${scale.x},${scale.y} Z`;
+    //if there was no line drawn, then don't bother adding the svg.
+    if(!drawingLine) return null;
 
     let graphPath = document.createElementNS("http://www.w3.org/2000/svg","path");
 
@@ -440,11 +453,16 @@ function buildPingGraph(detailData, scale) {
     return svg;
 }
 
+function getXCoordOfPingGraphPoint(i, dataPointCount, graphWidth) {
+    return i/dataPointCount*graphWidth + graphWidth/dataPointCount*0.5;
+}
+
 function loadedPingGraphCb(testGraphElem, detailData) {
     removeSkeletonGraph(testGraphElem);
 
     let scale = getElemSize(testGraphElem);
-    testGraphElem.appendChild(buildPingGraph(detailData,scale));
+    var g = buildPingGraph(detailData,scale);
+    if(g) testGraphElem.appendChild(g);
 
     reparseElement(testGraphElem.children[0]);
 }
@@ -454,8 +472,14 @@ function loadedFineUptimeCb(testGraphElem, detailData) {
 
     let testGraphList = document.createElement("ul");
 
-    for(var time = Date.now() / 1000, i = 0; i < getUptimeDayCount(); i++, time-=86400) {
-        testGraphList.insertBefore(buildTestGraphNode(getDayUptimePercentage(detailData, time), (new Date(time*1000)).toLocaleDateString()), testGraphList.children[0]);
+    var startTime = (Date.now() / 1000) - 86400 * getUptimeDayCount();
+
+    for(
+        var time = startTime, i = getUptimeDayCount() - 1;
+        i > 0;
+        i--, time+=86400)
+    {
+        testGraphList.appendChild(buildTestGraphNode(getDayUptimePercentage(detailData, time), (new Date(time*1000)).toLocaleDateString()));
     }
 
     testGraphElem.appendChild(testGraphList);
@@ -619,8 +643,18 @@ function addNewSubtest(testMainElem, newTestBody) {
     testMainElem.classList.remove(testCodeClassName(testMainCurrentState));
     testMainElem.classList.add(testCodeClassName(newMainTestStatusCode));
         
-    testMainElem.appendChild(newTestBody);
+    if(statusCodeHasGraph(thisTestSubtestCurrentState)) insertStart(testMainElem, newTestBody, 1);
+    else testMainElem.appendChild(newTestBody);
+
     testMainElem.classList.add("has-level-2");
+}
+
+
+function insertStart(parent, child, index) {
+    if(!index) index = 0;
+
+    if(parent.children.length <= index) parent.appendChild(child);
+    else parent.insertBefore(child, parent.children[index]);
 }
 
 function testIsSubheading(testName) {
@@ -788,7 +822,7 @@ function buildGraphPlaceholder() {
 function buildTestGraphNode(uptimePercentage, dateText) {
     let testUptimeNode = document.createElement("li");
 
-    testUptimeNode.style.backgroundColor = makeGraphNodeBgColor(uptimePercentage / 100);
+    testUptimeNode.style.background = makeGraphNodeBgColor(uptimePercentage / 100);
     if(uptimePercentage >= 0) {
         testUptimeNode.setAttribute("tooltip",`${dateText} - ${uptimePercentage}%`);
         testUptimeNode.classList.add("tooltip");
@@ -796,6 +830,12 @@ function buildTestGraphNode(uptimePercentage, dateText) {
         testUptimeNode.setAttribute("tooltip",`${dateText} - ${testCodeDescription(-1 * uptimePercentage)}`);
         testUptimeNode.classList.add("tooltip");
     }
+
+    testUptimeNode.addEventListener("mousemove", function(event) {
+        if(!testUptimeNode.parentElement) return false;
+        
+        var tooltippElem = testUptimeNode.parentElement.children[0]
+    });
     
     return testUptimeNode;
 }
@@ -857,7 +897,7 @@ function makeGraphNodeBgColor(percent) {
     if(percent * 100 == -2) return "#ececec";
     if(percent * 100 == -3) return "#9ae4da";
     
-    return `hsl(${Math.floor(percent * 120)}, 50%, 60%)`; 
+    return `linear-gradient(145deg, hsl(${Math.floor(percent * 120)}, 50%, 55%), hsl(${Math.floor(percent * 120)}, 50%, 65%))`; 
 }
 
 function testCodeCombination(num1,num2) {
@@ -933,11 +973,11 @@ function getTestName(encodedName) {
 function testCodeDescription(code) {
     code = code + "";
     let descMap = {
-        "0": "Outage",
+        "0": "Down",
         "1": "Operational",
         "2": "Not Online",
         "3": "In Maintenance",
-        "4": "Partial Outage"
+        "4": "Partially Down"
     }
 
     return descMap[code] || `Unknown Status ${code}`;

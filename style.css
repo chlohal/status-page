@@ -9,7 +9,7 @@ body {
     margin-left: 20vw;
     margin-right: 20vw;
     color: #110122;
-    background-color: #fcfcfc;
+    background-color: #FBF9F9;
     overflow-x: hidden;
 }
 header {
@@ -18,7 +18,7 @@ header {
 }
 header img {
     height: 5em;
-    background-color: #fff;
+    background-color: #FBF9F9;
     border-radius: 100%;
     margin-right: 1em;
 }
@@ -37,23 +37,23 @@ header h1 {
     align-items: center;
 }
 
-.status.operational .status-display {
-    color: #8cc473;
-}
-
-.status.outage .status-display {
-    color: #da4045;
-}
-
-.status.partial-outage .status-display {
+.partially-down .status-display {
     color: #e2b155;
 }
 
-.status.not-online .status-display {
+.operational .status-display {
+    color: #8cc473;
+}
+
+.down .status-display {
+    color: #da4045;
+}
+
+.not-online .status-display {
     color: #4f4e55;
 }
 
-.status.in-maintenance .status-display {
+.in-maintenance .status-display {
     color: #4e8a82;
 }
 
@@ -156,10 +156,12 @@ svg.icon {
 }
 
 .status {
-    border: 1px solid #f3f3f3;
-    background: #fafafa;
+    background: #FBF9F9;
     padding: 0.5em;
-    margin-top: 0.25em;
+    border-radius: 1em;
+    margin-top: 1em;
+    box-shadow: 0.25em 0.25em 0.5em 0 #d5d4d4,
+                -0.25em -0.25em 0.5em 0 #fff;
 }
 
 .status ul {
@@ -168,61 +170,28 @@ svg.icon {
     padding: 0;
     margin: 0;
     height: 100%;
+    overflow: hidden;
+    border-radius: 0.25em;
+    position: relative;
+    border-radius: 0.25em;
 }
 
-.status li {
+.status .graph-parent ul::before {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    content: "";
+}
+
+.status .graph-parent li {
     display: inline-block;
     height: 100%;
     flex-grow: 1;
-    border: 2px #fafafa solid;
     position: relative;
-}
-
-.status li.tooltip::before {
-    background: #403f41;
-    width: 1em;
-    height: 1em;
-    transform: rotate(45deg);
-    content: attr(tooltip);
-    font-size: 0;
-    position: absolute;
-    left: 0;
-    top: 100%;
-    right: 0;
-    margin: auto;
-    transition: 0.1s opacity, 0s display 0.1s;
-    z-index: 10;
-    box-shadow: #403f4150 0px 3px 4px 4px;
-    opacity: 0;
-    display: none;
-}
-
-.status li:hover::before {
-    opacity: 1;
-    display: block;
-}
-
-.status li.tooltip::after {
-    position:  absolute;
-    left: 10%;
-    top: 125%;
-    right: 10%;
-    min-width: max-content;
-    color: #fcfcfc;
-    padding: 0.25em;
-    background: #403f41;
-    content: attr(tooltip);
-    text-align: center;
-    opacity: 0;
-    transition: 0.1s opacity, 0s display 0.1s;
-    z-index: 10;
-    display: none;
-    box-shadow: #403f4150 0px 3px 4px 4px;
-}
-
-.status li:hover::after {
-    display: block;
-    opacity: 1;
 }
 
 .info-button {
@@ -352,25 +321,25 @@ dl:after {content:"";display:table;clear:both;}
 
 .graph-parent svg path {
     fill: transparent;
-    stroke: #004d40;
-    stroke-width: 2px;
+    stroke: #110122;
+    stroke-width: 1px;
 }
 
 svg text {
-    fill: #3a3a3a;
+    fill: #110122;
     background: #fff;
-    font-size: 10px;
 }
 
 .graph-skeleton {
     height: 100%;
+    border-radius: 0.25em;
     background: linear-gradient(-45deg, #dbdadd, #e7e6e6);
     animation: bgshift 2s infinite;
 }
 
 .graph-parent svg path.hor-line {
     stroke: #9d9d9d;
-    stroke-width: 0.5px;
+    stroke-width: 0.25px;
 }
 
 #announce {
@@ -419,7 +388,7 @@ display: none;
     justify-content: center;
     top: 0px;
     left: 0px;
-    background-color: #fcfcfc; 
+    background-color: #FBF9F9; 
     flex-direction: column;
 }
 
